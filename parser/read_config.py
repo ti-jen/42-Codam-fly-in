@@ -16,13 +16,93 @@ class hub:
         self.max_drones = max_drones
         self.zone = zone
         self.paths: dict[str, int] = {}
+        self.drones: int = 0
+
+    def add_zone(self, zone: str) -> None:
+        if zone not in ['normal', 'blocked', 'restricted', 'priority']:
+            raise ValueError(f"{zone} does not exist")
+        self.zone = zone
+
+    def add_max_drones(self, max_drone: int) -> None:
+        if max_drone <= 0:
+            raise ValueError(f"max drones must be positve: {max_drone}")
+        self.max_drones = max_drone
 
     def add_path(self, new_path: str, max_link_capacity: int) -> None:
+        if max_link_capacity <= 0:
+            raise ValueError(f"capacity must be positve: {max_link_capacity}")
         self.paths[new_path] = max_link_capacity
+
+    def is_space(self) -> bool:
+        if self.drones < self.max_drones:
+            return True
+        else:
+            return False
+
+    def add_drone(self) -> None:
+        self.drones += 1
+
+    def del_drone(self) -> None:
+        self.drones -= 1
+
+
+class start_hub(hub):
+    def __init__(self,
+                 name: str,
+                 cord_x: int,
+                 cord_y: int,
+                 numb_drones: int,
+                 color: str | None = None,
+                 zone: str = 'normal') -> None:
+        super().__init__(name, cord_x, cord_y, color, numb_drones, zone)
+        self.drones = numb_drones
+
+    def add_max_drones(self, max_drone: int) -> None:
+        return
+
+
+class end_hub(hub):
+    def __init__(self,
+                 name: str,
+                 cord_x: int,
+                 cord_y: int,
+                 numb_drones: int,
+                 color: str | None = None,
+                 zone: str = 'normal') -> None:
+        super().__init__(name, cord_x, cord_y, color, numb_drones, zone)
+
+    def is_deliverd(self) -> bool:
+        if self.drones == self.max_drones:
+            return True
+        else:
+            return False
+
+    def add_max_drones(self, max_drone: int) -> None:
+        return
+
+
+def check_input(input: list[str]) -> list[str]:
+    if len(input) < 4:
+        raise ValueError(
+            "zone definition error:",
+            "(expected 'type: name x y [metadata]'): {input}"
+        )
+    if "-" in input[1]:
+        raise ValueError(f"Invalid dash in: {input[1]}")
+    if (not input[2].lstrip('-+').isdigit() or
+       not input[3].lstrip('-+').isdigit()):
+        print(input)
+        raise ValueError(f"Invalid input in {input[0]}")
+    return input
 
 
 def read_config(filename: str) -> dict[str, hub]:
-    hubs = {}
+    hubs: dict[str, hub] = {}
+    reg_names = []
+    reg_paths = []
+    reg_cords = []
+    valid_start = False
+    valid_end = False
     with open(filename, 'r') as file:
         for line in file:
             line = line.strip()
@@ -31,27 +111,72 @@ def read_config(filename: str) -> dict[str, hub]:
 
             if line.startswith('nb_drones:'):
                 nb_drones = int(line.split(":")[1])
-            elif line.startswith(('hub:', 'start_hub:', 'end_hub:')):
+                if nb_drones <= 0:
+                    raise ValueError("drones can't be less than 1")
+                break
+            else:
+                raise ValueError("missing nb_drones first line")
+        for line in file:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+
+            if line.startswith(('hub:', 'start_hub:', 'end_hub:')):
                 metadata = re.search(r"\[(.*?)\]", line)
-                item = line.split()
-                hubs[item[1]] = hub(item[1], int(item[2]), int(item[3]))
+                item = check_input(line.split())
+                if item[1] in reg_names:
+                    raise ValueError(f"dubbel hub name: {item[1]}")
+                else:
+                    reg_names.append(item[1])
+                if (item[2], item[3]) in reg_cords:
+                    raise ValueError(f"dubbel cords: x,{item[2]} y,{item[3]}")
+                else:
+                    reg_cords.append((item[2], item[3]))
+                if item[0] == 'start_hub:':
+                    if valid_start:
+                        raise ValueError("dubbel start_hub")
+                    hubs[item[1]] = start_hub(item[1],
+                                              int(item[2]),
+                                              int(item[3]),
+                                              nb_drones)
+                    valid_start = True
+                elif item[0] == 'end_hub:':
+                    if valid_end:
+                        raise ValueError("dubbel end_hub")
+                    hubs[item[1]] = end_hub(item[1],
+                                            int(item[2]),
+                                            int(item[3]),
+                                            nb_drones)
+                    valid_end = True
+                else:
+                    hubs[item[1]] = hub(item[1], int(item[2]), int(item[3]))
                 if metadata:
                     for x in metadata.group(1).split():
                         value = x.split("=")
                         if value[0] == 'zone':
-                            hubs[item[1]].zone = value[1]
+                            hubs[item[1]].add_zone(value[1])
                         elif value[0] == 'color':
                             hubs[item[1]].color = value[1]
                         elif value[0] == 'max_drones':
-                            hubs[item[1]].max_drones = int(value[1])
-                if item[0] == 'start_hub:' or item[0] == 'end_hub:':
-                    hubs[item[1]].max_drones = nb_drones
+                            hubs[item[1]].add_max_drones(int(value[1]))
+                        else:
+                            raise ValueError(f"{value[0]} does not exist")
             elif line.startswith('connection:'):
                 link_cap = 1
                 path = line.split()[1].split("-")
+                if not path[0] in reg_names or not path[1] in reg_names:
+                    raise ValueError(f"name does not exist: {line}")
+                if reg_names.index(path[0]) > reg_names.index(path[1]):
+                    raise ValueError("link only previously defined zones:",
+                                     {line})
+                if path in reg_paths:
+                    raise ValueError(f"path already exists: {line}")
+                else:
+                    reg_paths.append(path)
                 metadata = re.search(r"\[(.*?)\]", line)
                 if metadata:
                     link_cap = int(metadata.group(1).split("=")[1])
                 hubs[path[0]].add_path(path[1], link_cap)
-                hubs[path[1]].add_path(path[0], link_cap)
+        if not valid_end or not valid_start:
+            raise ValueError("No valid start/end")
     return hubs

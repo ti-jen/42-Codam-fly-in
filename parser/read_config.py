@@ -85,13 +85,11 @@ def read_config(filename: str) -> dict[str, hub]:
             elif line.startswith('connection:'):
                 link_cap = 1
                 path = line.split()[1].split("-")
-                if not path[0] in reg_names or not path[1] in reg_names:
+                if path[0] not in reg_names or path[1] not in reg_names:
                     raise ValueError(f"name does not exist: {line}")
-                if reg_names.index(path[0]) > reg_names.index(path[1]):
-                    raise ValueError("link only previously defined zones:",
-                                     {line})
-                if path in reg_paths:
+                if path in reg_paths or path[::-1] in reg_paths:
                     raise ValueError(f"path already exists: {line}")
+
                 else:
                     reg_paths.append(path)
                 metadata = re.search(r"\[(.*?)\]", line)

@@ -16,9 +16,12 @@ def main() -> None:
     drones = swarm(start, goal.name, config)
     drones.make_swarm(config[start].max_drones)
     if isinstance(goal, end_hub):
+        i = 1
         while not goal.is_deliverd():
             drones.turn(config)
             print(drones.get_stat())
+            print(f"turn: {i}")
+            i += 1
             input()
 
 

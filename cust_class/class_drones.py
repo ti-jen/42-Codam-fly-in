@@ -12,6 +12,16 @@ def set_color(input: str, color: str | None) -> str:
         "yellow": "\033[33m",
         "white": "\033[37m",
         "orange": "\033[38;5;208m",
+        "cyan": "\033[36m",
+        "purple": "\033[35m",
+        "lime": "\033[38;5;118m",
+        "magenta": "\033[35m",
+        "gold": "\033[38;5;220m",
+        "maroon": "\033[38;5;88m",
+        "darkred": "\033[38;5;88m",
+        "violet": "\033[38;5;129m",
+        "crimson": "\033[38;5;160m",
+        "rainbow": "\033[38;5;201m",
     }
 
     return f"{colors[color]}{input}\033[0m"
@@ -24,27 +34,45 @@ class drone:
         self.location = location
         self.short_path = path
         self.goal = goal
+        self.is_restricted = False
 
     def move(self, config: dict[str, hub]) -> None:
         if self.location == self.goal:
             return
         cur = config[self.location]
         next = config[self.short_path[0]]
-        if next.get_zone() == 'blocked' or cur.paths[self.short_path[0]] <= 0:
-            new_path = search.find_path(config, self.location, self.goal)
-            if new_path:
-                self.short_path = new_path
-            else:
+
+        if self.is_restricted:
+            cur.safe_path[self.short_path[0]] += 1
+            self.location = self.short_path[0]
+            next.add_drone()
+            self.is_restricted = False
+            return
+
+        new_path = search.find_path(config, self.location, self.goal)
+        if new_path and config[new_path[0]].get_zone() != 'blocked':
+            self.short_path = new_path
+        else:
+            return
+        if config[self.short_path[0]].get_zone() == 'restricted':
+            if cur.paths[self.short_path[0]] <= 0:
                 return
+            cur.del_drone()
+            cur.go_dir(self.short_path[0])
+            cur.safe_path[self.short_path[0]] -= 1
+            self.is_restricted = True
+            return
         cur.go_dir(self.short_path[0])
         self.location = self.short_path[0]
-        self.loc_color = config[self.location].color
         cur.del_drone()
         config[self.short_path[0]].add_drone()
         self.short_path = self.short_path[1:]
 
     def stats(self) -> tuple[str, str]:
-        return (self.name, self.location)
+        loc = self.location
+        if self.is_restricted:
+            loc = self.short_path[0]
+        return (self.name, loc)
 
 
 class swarm:

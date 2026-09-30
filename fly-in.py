@@ -11,12 +11,12 @@ def clear_lines(n: int) -> None:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        print('> python fly-in.py [map.txt]')
+        print('> make run MAP=example.txt')
         exit()
     try:
         config = read_config(sys.argv[1])
     except Exception as e:
-        print(e)
+        exit(f'{e}')
     for key in config:
         if isinstance(config[key], start_hub):
             start = config[key].name

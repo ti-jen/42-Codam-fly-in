@@ -34,11 +34,13 @@ class drone:
         self.location = location
         self.short_path = path
         self.goal = goal
+        self.turns = 0
         self.is_restricted = False
 
-    def move(self, config: dict[str, hub]) -> None:
+    def move(self, config: dict[str, hub]) -> int:
         if self.location == self.goal:
-            return
+            return 0
+        self.turns += 1
         cur = config[self.location]
         next = config[self.short_path[0]]
 
@@ -47,26 +49,27 @@ class drone:
             self.location = self.short_path[0]
             next.add_drone()
             self.is_restricted = False
-            return
+            return 1
 
         new_path = search.find_path(config, self.location, self.goal)
         if new_path and config[new_path[0]].get_zone() != 'blocked':
             self.short_path = new_path
         else:
-            return
+            return 0
         if config[self.short_path[0]].get_zone() == 'restricted':
             if cur.paths[self.short_path[0]] <= 0:
-                return
+                return 0
             cur.del_drone()
             cur.go_dir(self.short_path[0])
             cur.safe_path[self.short_path[0]] -= 1
             self.is_restricted = True
-            return
+            return 1
         cur.go_dir(self.short_path[0])
         self.location = self.short_path[0]
         cur.del_drone()
         config[self.short_path[0]].add_drone()
         self.short_path = self.short_path[1:]
+        return 1
 
     def stats(self) -> tuple[str, str]:
         loc = self.location
@@ -81,6 +84,7 @@ class swarm:
         self.goal = goal
         self.map = map
         self.drone_l: list[drone]
+        self.turn_moves = 0
 
     def make_swarm(self, amount: int) -> None:
         drones = []
@@ -91,7 +95,7 @@ class swarm:
 
     def turn(self, config: dict[str, hub]) -> None:
         for d in self.drone_l:
-            d.move(config)
+            self.turn_moves += d.move(config)
         for x in config:
             config[x].reset_turn()
 
@@ -101,3 +105,7 @@ class swarm:
             info = d.stats()
             stat += f"{info[0]}-{set_color(info[1], self.map[info[1]].color)} "
         return stat
+
+    def print_drone_turns(self) -> None:
+        for d in self.drone_l:
+            print(f"[{d.name}] turns:{d.turns}")

@@ -13,7 +13,10 @@ def main() -> None:
     if len(sys.argv) != 2:
         print('> python fly-in.py [map.txt]')
         exit()
-    config = read_config(sys.argv[1])
+    try:
+        config = read_config(sys.argv[1])
+    except Exception as e:
+        print(e)
     for key in config:
         if isinstance(config[key], start_hub):
             start = config[key].name
@@ -21,19 +24,27 @@ def main() -> None:
             goal = config[key]
     drones = swarm(start, goal.name, config)
     drones.make_swarm(config[start].max_drones)
+    turns = []
     if isinstance(goal, end_hub):
         i = 0
         while not goal.is_deliverd():
             lines = Render_map(config)
-            print(drones.get_stat())
-            print(f"turn: {i}")
+            turns.append(f"[turn: {i} moves: {drones.turn_moves}]"
+                         f"{drones.get_stat()}")
+            drones.turn_moves = 0
+            for x in turns:
+                print(x)
             i += 1
             input()
             drones.turn(config)
-            clear_lines(lines + 3)
+            clear_lines(lines + 2 + len(turns))
     Render_map(config)
-    print(drones.get_stat())
-    print(f"turn: {i}")
+    turns.append(f"[turn: {i} moves: {drones.turn_moves}]"
+                 f"{drones.get_stat()}")
+    for x in turns:
+        print(x)
+    print(f"--finished in {i} turns--")
+    drones.print_drone_turns()
 
 
 if __name__ == "__main__":

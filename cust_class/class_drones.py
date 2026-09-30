@@ -1,30 +1,6 @@
 import pathfinding as search
 from .class_hubs import hub
-
-
-def set_color(input: str, color: str | None) -> str:
-    if color is None:
-        return input
-    colors = {
-        "red": "\033[31m",
-        "green": "\033[32m",
-        "blue": "\033[34m",
-        "yellow": "\033[33m",
-        "white": "\033[37m",
-        "orange": "\033[38;5;208m",
-        "cyan": "\033[36m",
-        "purple": "\033[35m",
-        "lime": "\033[38;5;118m",
-        "magenta": "\033[35m",
-        "gold": "\033[38;5;220m",
-        "maroon": "\033[38;5;88m",
-        "darkred": "\033[38;5;88m",
-        "violet": "\033[38;5;129m",
-        "crimson": "\033[38;5;160m",
-        "rainbow": "\033[38;5;201m",
-    }
-
-    return f"{colors[color]}{input}\033[0m"
+from map_visuals import set_color
 
 
 class drone:

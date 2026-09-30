@@ -1,7 +1,7 @@
 import sys
 from parser import read_config
 from cust_class import start_hub, end_hub, swarm
-from visualizer import Render_map
+from map_visuals import Render_map, set_color
 
 
 def clear_lines(n: int) -> None:
@@ -16,7 +16,7 @@ def main() -> None:
     try:
         config = read_config(sys.argv[1])
     except Exception as e:
-        exit(f'{e}')
+        exit(f'{set_color("[ERROR] ", "red")}{e}')
     for key in config:
         if isinstance(config[key], start_hub):
             start = config[key].name

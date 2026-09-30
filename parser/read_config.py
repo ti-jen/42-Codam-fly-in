@@ -1,5 +1,6 @@
 import re
 from cust_class import hub, end_hub, start_hub
+from map_visuals import set_color
 
 
 def check_input(input: list[str]) -> list[str]:
@@ -31,7 +32,13 @@ def read_config(filename: str) -> dict[str, hub]:
                 continue
 
             if line.startswith('nb_drones:'):
-                nb_drones = int(line.split(":")[1])
+                if len(line.split(":")) != 2:
+                    raise ValueError("wrong nb_drones"
+                                     "(excpected: nb_drones: 1)")
+                try:
+                    nb_drones = int(line.split(":")[1])
+                except ValueError:
+                    raise ValueError(f"nb_drones is not 'int': {line}")
                 if nb_drones <= 0:
                     raise ValueError("drones can't be less than 1")
                 break
@@ -74,27 +81,58 @@ def read_config(filename: str) -> dict[str, hub]:
                 if metadata:
                     for x in metadata.group(1).split():
                         value = x.split("=")
+                        if len(value) != 2:
+                            raise ValueError("Invalid metadata"
+                                             f"'{x}' in: {line}")
                         if value[0] == 'zone':
                             hubs[item[1]].add_zone(value[1])
                         elif value[0] == 'color':
+                            try:
+                                set_color("", value[1])
+                            except KeyError as e:
+                                raise KeyError(f"{e} is not a color: {line}")
                             hubs[item[1]].color = value[1]
                         elif value[0] == 'max_drones':
-                            hubs[item[1]].add_max_drones(int(value[1]))
+                            try:
+                                hubs[item[1]].add_max_drones(int(value[1]))
+                            except ValueError:
+                                raise ValueError("add_max_drones is not"
+                                                 f"'int':{line}")
                         else:
                             raise ValueError(f"{value[0]} does not exist")
             elif line.startswith('connection:'):
                 link_cap = 1
-                path = line.split()[1].split("-")
+                path = line.split()
+                if len(path) < 2:
+                    raise ValueError(f"wrong connection (expected 'connection:"
+                                     f"name1-name2'): {line}")
+                path = path[1].split("-")
+                if len(path) != 2:
+                    raise ValueError(f"wrong connection (expected 'connection:"
+                                     f"name1-name2'): {line}")
                 if path[0] not in reg_names or path[1] not in reg_names:
                     raise ValueError(f"name does not exist: {line}")
                 if path in reg_paths or path[::-1] in reg_paths:
                     raise ValueError(f"path already exists: {line}")
-
                 else:
                     reg_paths.append(path)
                 metadata = re.search(r"\[(.*?)\]", line)
                 if metadata:
-                    link_cap = int(metadata.group(1).split("=")[1])
+                    cap_value = metadata.group(1).split("=")
+                    if len(cap_value) != 2:
+                        raise ValueError("Invalid metadata"
+                                         f"'{metadata.group(1)}' in: {line}")
+                    if cap_value[0] == 'max_link_capacity':
+                        if len(cap_value) != 2:
+                            raise ValueError("Invalid metadata "
+                                             f"{metadata.group(1)} in: {line}")
+                    else:
+                        raise ValueError(f"{cap_value[0]} does not exist")
+                    try:
+                        link_cap = int(cap_value[1])
+                    except ValueError:
+                        raise ValueError("max_link_capacity is not"
+                                         f"'int':{line}")
                 hubs[path[0]].add_path(path[1], link_cap)
         if not valid_end or not valid_start:
             raise ValueError("No valid start/end")

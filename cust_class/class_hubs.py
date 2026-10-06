@@ -25,11 +25,16 @@ class hub:
     def add_max_drones(self, max_drone: int) -> None:
         if max_drone <= 0:
             raise ValueError(f"max drones must be positve: {max_drone}")
+        if max_drone > 1000:
+            raise ValueError(f"max drones must be below 1000: {max_drone}")
         self.max_drones = max_drone
 
     def add_path(self, new_path: str, max_link_capacity: int) -> None:
         if max_link_capacity <= 0:
             raise ValueError(f"capacity must be positve: {max_link_capacity}")
+        if max_link_capacity > 1000:
+            raise ValueError("capacity must be below 1000:"
+                             f"{max_link_capacity}")
         self.paths[new_path] = max_link_capacity
         self.safe_path[new_path] = max_link_capacity
 

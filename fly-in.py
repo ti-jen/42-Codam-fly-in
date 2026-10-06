@@ -35,7 +35,7 @@ def main() -> None:
             for x in turns:
                 print(x)
             i += 1
-            input()
+            input("PRESS ENTER: for next step")
             drones.turn(config)
             clear_lines(lines + 2 + len(turns))
     Render_map(config)

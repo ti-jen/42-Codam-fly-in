@@ -35,8 +35,15 @@ def main() -> None:
             for x in turns:
                 print(x)
             i += 1
-            input("PRESS ENTER: for next step")
-            drones.turn(config)
+            info = input("PRESS ENTER: for next step SKIP: type 'f':")
+            if info == "f":
+                while not goal.is_deliverd():
+                    turns.append(f"[turn: {i} moves: {drones.turn_moves}]"
+                                 f"{drones.get_stat()}")
+                    i += 1
+                    drones.turn(config)
+            else:
+                drones.turn(config)
             clear_lines(lines + 2 + len(turns))
     Render_map(config)
     turns.append(f"[turn: {i} moves: {drones.turn_moves}]"

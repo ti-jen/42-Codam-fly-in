@@ -1,6 +1,7 @@
 import re
 from cust_class import hub, end_hub, start_hub
 from map_visuals import set_color
+from pathfinding import find_path
 
 
 def check_input(input: list[str]) -> list[str]:
@@ -13,8 +14,13 @@ def check_input(input: list[str]) -> list[str]:
         raise ValueError(f"Invalid dash in: {input[1]}")
     if (not input[2].lstrip('-+').isdigit() or
        not input[3].lstrip('-+').isdigit()):
-        print(input)
         raise ValueError(f"Invalid input in {input[0]}")
+    if int(input[2]) > 100 or int(input[2]) < -100:
+        raise ValueError(f"Invalid input in {input[0]}"
+                         " x can't be higer than 100")
+    if int(input[3]) > 100 or int(input[3]) < -100:
+        raise ValueError(f"Invalid input in {input[0]}"
+                         " y can't be higer than 100")
     return input
 
 
@@ -39,8 +45,9 @@ def read_config(filename: str) -> dict[str, hub]:
                     nb_drones = int(line.split(":")[1])
                 except ValueError:
                     raise ValueError(f"nb_drones is not 'int': {line}")
-                if nb_drones <= 0:
-                    raise ValueError("drones can't be less than 1")
+                if nb_drones <= 0 or nb_drones > 1000:
+                    raise ValueError("drones can't be less than "
+                                     "and more than 1000")
                 break
             else:
                 raise ValueError("missing nb_drones first line")
@@ -67,6 +74,7 @@ def read_config(filename: str) -> dict[str, hub]:
                                               int(item[2]),
                                               int(item[3]),
                                               nb_drones)
+                    start = item[1]
                     valid_start = True
                 elif item[0] == 'end_hub:':
                     if valid_end:
@@ -75,6 +83,7 @@ def read_config(filename: str) -> dict[str, hub]:
                                             int(item[2]),
                                             int(item[3]),
                                             nb_drones)
+                    end = item[1]
                     valid_end = True
                 else:
                     hubs[item[1]] = hub(item[1], int(item[2]), int(item[3]))
@@ -136,4 +145,7 @@ def read_config(filename: str) -> dict[str, hub]:
                 hubs[path[0]].add_path(path[1], link_cap)
         if not valid_end or not valid_start:
             raise ValueError("No valid start/end")
+        is_path = find_path(hubs, start, end)
+        if not is_path:
+            raise ValueError("No valid path from start to end")
     return hubs

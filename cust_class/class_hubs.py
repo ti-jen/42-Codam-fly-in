@@ -40,7 +40,7 @@ class hub:
 
     def get_zone(self) -> str:
         if self.drones >= self.max_drones:
-            return 'blocked'
+            return 'full'
         else:
             return self.zone
 

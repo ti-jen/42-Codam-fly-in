@@ -34,12 +34,13 @@ def main() -> None:
             drones.turn_moves = 0
             for x in turns:
                 print(x)
-            info = input("PRESS ENTER: for next step SKIP: type 'f':")
+            info = input("PRESS ENTER: for next step | SKIP: type 'f':")
             if info == "f":
                 while not goal.is_deliverd():
                     turns.append(f"[turn: {i} moves: {drones.turn_moves}]"
                                  f"{drones.get_stat()}")
                     i += 1
+                    drones.turn_moves = 0
                     drones.turn(config)
             else:
                 drones.turn(config)

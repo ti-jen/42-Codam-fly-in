@@ -8,12 +8,20 @@ def find_path(map: dict[str, hub], loc: str, goal: str) -> list[str]:
     rever = {}
     res = []
     for x in map[loc].paths:
-        if map[x].get_zone() != 'blocked' and map[loc].paths[x] > 0:
+        if (
+            map[x].get_zone() != 'blocked'
+            and map[loc].paths[x] > 0
+            and map[x].get_zone() != 'full'
+        ):
             if map[x].get_zone() == 'priority' and x not in rever:
                 rever[x] = loc
                 queue.append(x)
     for x in map[loc].paths:
-        if map[x].get_zone() != 'blocked' and map[loc].paths[x] > 0:
+        if (
+            map[x].get_zone() != 'blocked'
+            and map[loc].paths[x] > 0
+            and map[x].get_zone() != 'full'
+        ):
             if map[x].get_zone() != 'priority' and x not in rever:
                 rever[x] = loc
                 queue.append(x)
@@ -28,11 +36,19 @@ def find_path(map: dict[str, hub], loc: str, goal: str) -> list[str]:
         else:
             paths = map[current].paths
             for x in paths:
-                if map[x].get_zone() == 'priority' and x not in rever:
+                if (
+                    map[x].get_zone() == 'priority'
+                    and x not in rever 
+                    and map[x].get_zone() != 'blocked'
+                ):
                     rever[x] = current
                     queue.append(x)
             for x in paths:
-                if map[x].get_zone() != 'priority' and x not in rever:
+                if (
+                    map[x].get_zone() != 'priority'
+                    and x not in rever 
+                    and map[x].get_zone() != 'blocked'
+                ):
                     rever[x] = current
                     queue.append(x)
     if goal not in rever:

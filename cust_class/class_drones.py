@@ -8,6 +8,7 @@ class drone:
                  goal: str, path: list[str]) -> None:
         self.name = name
         self.location = location
+        self.safe_location = location
         self.short_path = path
         self.goal = goal
         self.turns = 0
@@ -18,17 +19,15 @@ class drone:
             return 0
         self.turns += 1
         cur = config[self.location]
-        next = config[self.short_path[0]]
 
         if self.is_restricted:
             cur.safe_path[self.short_path[0]] += 1
             self.location = self.short_path[0]
-            next.add_drone()
             self.is_restricted = False
             return 1
 
         new_path = search.find_path(config, self.location, self.goal)
-        if new_path and config[new_path[0]].get_zone() != 'blocked':
+        if new_path and config[new_path[0]].get_zone() != 'full':
             self.short_path = new_path
         else:
             return 0
@@ -36,8 +35,10 @@ class drone:
             if cur.paths[self.short_path[0]] <= 0:
                 return 0
             cur.del_drone()
+            config[self.short_path[0]].add_drone()
             cur.go_dir(self.short_path[0])
             cur.safe_path[self.short_path[0]] -= 1
+
             self.is_restricted = True
             return 1
         cur.go_dir(self.short_path[0])
@@ -47,10 +48,13 @@ class drone:
         self.short_path = self.short_path[1:]
         return 1
 
-    def stats(self) -> tuple[str, str]:
+    def stats(self) -> tuple[str, str] | None:
         loc = self.location
         if self.is_restricted:
             loc = self.short_path[0]
+        if loc == self.safe_location:
+            return None
+        self.safe_location = loc
         return (self.name, loc)
 
 
@@ -79,7 +83,9 @@ class swarm:
         stat = ""
         for d in self.drone_l:
             info = d.stats()
-            stat += f"{info[0]}-{set_color(info[1], self.map[info[1]].color)} "
+            if info is not None:
+                stat += (f"{info[0]}-"
+                         f"{set_color(info[1], self.map[info[1]].color)} ")
         return stat
 
     def print_drone_turns(self) -> None:

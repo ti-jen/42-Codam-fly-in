@@ -38,7 +38,7 @@ def find_path(map: dict[str, hub], loc: str, goal: str) -> list[str]:
             for x in paths:
                 if (
                     map[x].get_zone() == 'priority'
-                    and x not in rever 
+                    and x not in rever
                     and map[x].get_zone() != 'blocked'
                 ):
                     rever[x] = current
@@ -46,7 +46,7 @@ def find_path(map: dict[str, hub], loc: str, goal: str) -> list[str]:
             for x in paths:
                 if (
                     map[x].get_zone() != 'priority'
-                    and x not in rever 
+                    and x not in rever
                     and map[x].get_zone() != 'blocked'
                 ):
                     rever[x] = current
